@@ -1,13 +1,14 @@
 import streamlit as st
+import pandas as pd
 import psycopg
 from psycopg.rows import dict_row
 
-st.title("📊 Тест връзка със Supabase")
+st.title("Всички таблици от схема kg")
 
 # --- Връзка към Supabase ---
-try:
-    db = st.secrets["connections"]["supabase"]
+db = st.secrets["connections"]["supabase"]
 
+try:
     conn = psycopg.connect(
         host=db["host"],
         dbname=db["dbname"],
@@ -17,13 +18,35 @@ try:
         sslmode=db.get("sslmode", "require"),
         row_factory=dict_row
     )
-    st.success("✅ Успешна връзка с базата")
-
-    # Пробна заявка: покажи всички схеми
-    with conn.cursor() as cur:
-        cur.execute("SELECT schema_name FROM information_schema.schemata ORDER BY schema_name;")
-        schemas = [r["schema_name"] for r in cur.fetchall()]
-    st.write("🔍 Намерени схеми:", schemas)
-
+    st.success("Успешна връзка с базата")
 except Exception as e:
-    st.error(f"❌ Грешка: {e}")
+    st.error(f"Грешка при връзка със Supabase: {e}")
+    st.stop()
+
+# --- Вземи всички таблици от kg ---
+try:
+    with conn.cursor() as cur:
+        cur.execute("""
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = 'kg'
+            ORDER BY table_name;
+        """)
+        tables = [r["table_name"] for r in cur.fetchall()]
+except Exception as e:
+    st.error(f"Грешка при четене на таблици: {e}")
+    st.stop()
+
+if not tables:
+    st.warning("Няма намерени таблици в schema 'kg'.")
+else:
+    for table in tables:
+        st.subheader(f"Таблица: {table}")
+        try:
+            df = pd.read_sql(f'SELECT * FROM kg."{table}" LIMIT 100;', conn)
+            if df.empty:
+                st.info("Таблицата е празна")
+            else:
+                st.dataframe(df)
+        except Exception as e:
+            st.error(f"Грешка при зареждане на {table}: {e}")
