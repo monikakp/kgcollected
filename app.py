@@ -3,9 +3,9 @@ import pandas as pd
 import psycopg
 from psycopg.rows import dict_row
 
-st.title("📊 Моите таблици от Supabase (схема kg)")
+st.title("📊 Моите таблици от Supabase")
 
-# --- Връзка към Supabase (данните идват от Secrets) ---
+# --- Връзка към Supabase ---
 db = st.secrets["connections"]["supabase"]
 
 conn = psycopg.connect(
@@ -18,25 +18,32 @@ conn = psycopg.connect(
     row_factory=dict_row
 )
 
-# --- Вземи всички таблици от схема kg ---
+# --- Покажи всички схеми за проверка ---
+with conn.cursor() as cur:
+    cur.execute("SELECT schema_name FROM information_schema.schemata ORDER BY schema_name;")
+    schemas = [r["schema_name"] for r in cur.fetchall()]
+st.write("🔍 Намерени схеми в базата:", schemas)
+
+# --- Покажи всички таблици от schema = 'kg' ---
 with conn.cursor() as cur:
     cur.execute("""
-        SELECT table_name
+        SELECT table_schema, table_name
         FROM information_schema.tables
-        WHERE table_schema = 'kg'
-        ORDER BY table_name;
+        WHERE table_schema NOT IN ('pg_catalog', 'information_schema')
+        ORDER BY table_schema, table_name;
     """)
-    tables = [r["table_name"] for r in cur.fetchall()]
+    all_tables = cur.fetchall()
 
-if not tables:
-    st.warning("❗ Няма намерени таблици в схема 'kg'")
+st.write("📋 Всички таблици, които виждам:", all_tables)
+
+# --- Ако има таблици в kg, покажи данни ---
+kg_tables = [t["table_name"] for t in all_tables if t["table_schema"] == "kg"]
+
+if not kg_tables:
+    st.warning("❗ Не намерих таблици в schema 'kg'. Проверете името на схемата.")
 else:
-    # Sidebar за избор на таблица
-    table_choice = st.sidebar.selectbox("Избери таблица", tables)
-
-    # Зареждаме първите 100 реда от избраната таблица
+    table_choice = st.sidebar.selectbox("Избери таблица", kg_tables)
     query = f'SELECT * FROM kg."{table_choice}" LIMIT 100;'
     df = pd.read_sql(query, conn)
-
     st.subheader(f"Таблица: {table_choice}")
     st.dataframe(df)
