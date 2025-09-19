@@ -7,15 +7,15 @@ anon_key = st.secrets["supabase"]["anon_key"]
 
 supabase = create_client(url, anon_key)
 
-st.title("📊 Моите таблици от Supabase (схема kg)")
+st.title("Информация за събрани пари и разходи")
 
 # Списък с таблиците (схема + име)
 TABLES = [
-    "kg.children",
-    "kg.collected_money",
-    "kg.curr_year_start_with",
-    "kg.expense_types",
-    "kg.expenses",
+    "children",
+    "collected_money",
+    "curr_year_start_with",
+    "expense_types",
+    "expenses",
 ]
 
 # Визуализация
@@ -29,4 +29,4 @@ for table in TABLES:
         else:
             st.info("Няма редове в тази таблица.")
     except Exception as e:
-        st.error(f"⚠️ Проблем при зареждане на {table}: {e}")
+        st.error(f"Проблем при зареждане на {table}: {e}")
