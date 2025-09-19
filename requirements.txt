@@ -1,4 +1,4 @@
 streamlit
 psycopg[binary]
 pandas
-supabase
+supabase==2.11.0
