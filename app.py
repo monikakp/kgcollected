@@ -8,7 +8,7 @@ st.title("Тест за връзка с Supabase")
 url = st.secrets["supabase"]["url"]
 anon_key = st.secrets["supabase"]["anon_key"]
 
-supabase = create_client(url, anon_key)
+supabase = create_client(url, st.secrets["supabase"]["service_role_key"])
 
 # Името на таблицата за тест
 TEST_TABLE = "children"
