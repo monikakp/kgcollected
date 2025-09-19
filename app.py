@@ -10,6 +10,7 @@ supabase = create_client(url, anon_key)
 
 st.title("Моите таблици от Supabase (public schema)")
 
+# Списък с таблиците
 TABLES = [
     "children",
     "collected_money",
@@ -18,15 +19,22 @@ TABLES = [
     "expenses",
 ]
 
+# Функция за изпълнение на SQL query
+def fetch_table(table_name):
+    sql = f"SELECT * FROM {table_name} LIMIT 100;"
+    try:
+        result = supabase.rpc("sql", {"query": sql}).execute()
+        return result.data
+    except Exception as e:
+        st.error(f"Проблем при зареждане на {table_name}: {e}")
+        return None
+
+# Визуализация на таблиците
 for table in TABLES:
     st.subheader(f"Таблица: {table}")
-    try:
-        response = supabase.table(table).select("*").limit(100).execute()
-        data = response.data
-        if data:
-            df = pd.DataFrame(data)
-            st.dataframe(df)
-        else:
-            st.info("Няма редове в тази таблица.")
-    except Exception as e:
-        st.error(f"Проблем при зареждане на {table}: {e}")
+    data = fetch_table(table)
+    if data:
+        df = pd.DataFrame(data)
+        st.dataframe(df)
+    else:
+        st.info("Няма налични редове или достъпът е отказан.")
