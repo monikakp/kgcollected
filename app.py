@@ -1,17 +1,16 @@
 import streamlit as st
-from supabase import create_client, Client
+from supabase import create_client
 import pandas as pd
 
-st.title("Тест за Supabase с service_role_key (public schema)")
+# Взимаме данните от Secrets
+url = st.secrets["supabase"]["url"]
+anon_key = st.secrets["supabase"]["anon_key"]
 
-# Вземаме URL и service_role_key от Streamlit Secrets
-url: str = st.secrets["supabase"]["url"]
-service_key: str = st.secrets["supabase"]["service_role_key"]
+supabase = create_client(url, anon_key)
 
-# Създаваме Supabase клиент
-supabase: Client = create_client(url, service_key)
+st.title("Моите таблици от Supabase (public schema)")
 
-# Таблиците за тест
+# Списък с таблиците
 TABLES = [
     "children",
     "collected_money",
@@ -20,21 +19,22 @@ TABLES = [
     "expenses",
 ]
 
-# Функция за визуализация на таблица
-def show_table(table_name: str):
-    st.subheader(f"Таблица: {table_name}")
+# Функция за изпълнение на SQL query
+def fetch_table(table_name):
+    sql = f"SELECT * FROM {table_name} LIMIT 100;"
     try:
-        response = supabase.table(table_name).select("*").limit(100).execute()
-        data = response.data
-        if data:
-            df = pd.DataFrame(data)
-            st.dataframe(df)
-            st.success(f"Данните от {table_name} са заредени успешно!")
-        else:
-            st.info(f"Таблицата {table_name} е празна.")
+        result = supabase.rpc("sql", {"query": sql}).execute()
+        return result.data
     except Exception as e:
         st.error(f"Проблем при зареждане на {table_name}: {e}")
+        return None
 
-# Визуализираме всички таблици
+# Визуализация на таблиците
 for table in TABLES:
-    show_table(table)
+    st.subheader(f"Таблица: {table}")
+    data = fetch_table(table)
+    if data:
+        df = pd.DataFrame(data)
+        st.dataframe(df)
+    else:
+        st.info("Няма налични редове или достъпът е отказан.")
