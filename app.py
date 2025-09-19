@@ -1,15 +1,15 @@
 import streamlit as st
 from supabase import create_client
+import pandas as pd
 
-# Взимаме данните от Secrets (Streamlit Cloud → Settings → Secrets)
+# Взимаме данните от Secrets
 url = st.secrets["supabase"]["url"]
 anon_key = st.secrets["supabase"]["anon_key"]
 
 supabase = create_client(url, anon_key)
 
-st.title("Информация за събрани пари и разходи")
+st.title("Моите таблици от Supabase (public schema)")
 
-# Списък с таблиците (схема + име)
 TABLES = [
     "children",
     "collected_money",
@@ -18,14 +18,14 @@ TABLES = [
     "expenses",
 ]
 
-# Визуализация
 for table in TABLES:
     st.subheader(f"Таблица: {table}")
     try:
-        response = supabase.table(table).select("*").execute()
+        response = supabase.table(table).select("*").limit(100).execute()
         data = response.data
         if data:
-            st.dataframe(data)
+            df = pd.DataFrame(data)
+            st.dataframe(df)
         else:
             st.info("Няма редове в тази таблица.")
     except Exception as e:
