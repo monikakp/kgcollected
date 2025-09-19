@@ -1,17 +1,17 @@
 import streamlit as st
-from supabase import create_client
+from supabase import create_client, Client
 import pandas as pd
 
-st.title("Тест за Supabase с service_role_key")
+st.title("Тест за Supabase с service_role_key (public schema)")
 
-# Вземаме URL и service_role_key от Secrets
-url = st.secrets["supabase"]["url"]
-service_key = st.secrets["supabase"]["service_role_key"]
+# Вземаме URL и service_role_key от Streamlit Secrets
+url: str = st.secrets["supabase"]["url"]
+service_key: str = st.secrets["supabase"]["service_role_key"]
 
-# Създаваме Supabase клиент с service_role_key
-supabase = create_client(url, service_key)
+# Създаваме Supabase клиент
+supabase: Client = create_client(url, service_key)
 
-# Списък с таблиците
+# Таблиците за тест
 TABLES = [
     "children",
     "collected_money",
@@ -20,17 +20,21 @@ TABLES = [
     "expenses",
 ]
 
-# Визуализация на таблиците
-for table in TABLES:
-    st.subheader(f"Таблица: {table}")
+# Функция за визуализация на таблица
+def show_table(table_name: str):
+    st.subheader(f"Таблица: {table_name}")
     try:
-        response = supabase.table(table).select("*").limit(100).execute()
+        response = supabase.table(table_name).select("*").limit(100).execute()
         data = response.data
         if data:
             df = pd.DataFrame(data)
             st.dataframe(df)
-            st.success("Успешно се четат данните!")
+            st.success(f"Данните от {table_name} са заредени успешно!")
         else:
-            st.info("Таблицата е празна.")
+            st.info(f"Таблицата {table_name} е празна.")
     except Exception as e:
-        st.error(f"Проблем при зареждане на {table}: {e}")
+        st.error(f"Проблем при зареждане на {table_name}: {e}")
+
+# Визуализираме всички таблици
+for table in TABLES:
+    show_table(table)
