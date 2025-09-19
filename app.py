@@ -8,10 +8,10 @@ st.title("Тест за Supabase с service_role_key")
 url = st.secrets["supabase"]["url"]
 service_key = st.secrets["supabase"]["service_role_key"]
 
-# Създаваме клиент с service_role_key
+# Създаваме Supabase клиент с service_role_key
 supabase = create_client(url, service_key)
 
-# Таблиците за тест
+# Списък с таблиците
 TABLES = [
     "children",
     "collected_money",
@@ -20,10 +20,11 @@ TABLES = [
     "expenses",
 ]
 
+# Визуализация на таблиците
 for table in TABLES:
     st.subheader(f"Таблица: {table}")
     try:
-        response = supabase.table(table).select("*").limit(5).execute()
+        response = supabase.table(table).select("*").limit(100).execute()
         data = response.data
         if data:
             df = pd.DataFrame(data)
